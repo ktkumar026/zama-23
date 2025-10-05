@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Zama Creator Program — Quiz</title>
+  <style>
+    :root{
+      --bg:#fff9e6; /* soft yellow background */
+      --panel:#fffef8;
+      --accent:#f6c94d; /* warm yellow */
+      --accent-dark:#e0ab2b;
+      --muted:#6b6b6b;
+      --success:#2d9f6b;
+      --error:#d64545;
+      --card-shadow: 0 8px 24px rgba(0,0,0,0.06);
+      font-family: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:linear-gradient(180deg,var(--bg),#fff);color:#111}
+    .wrap{max-width:920px;margin:36px auto;padding:20px}
+    header{display:flex;align-items:center;gap:16px;margin-bottom:18px}
+    .logo{width:64px;height:64px;border-radius:12px;background:linear-gradient(135deg,var(--accent),var(--accent-dark));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:18px;box-shadow:var(--card-shadow)}
+    h1{font-size:20px;margin:0}
+    p.lead{margin:6px 0 0;color:var(--muted)}
+
+    .card{background:var(--panel);border-radius:12px;padding:18px;box-shadow:var(--card-shadow);}
+    .question{margin-bottom:16px;padding:14px;border-radius:10px;border:1px solid rgba(0,0,0,0.04)}
+    .q-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+    .q-num{background:rgba(0,0,0,0.04);padding:6px 10px;border-radius:999px;font-weight:600}
+    .q-text{font-weight:600}
+    .options{display:grid;gap:8px;margin-top:8px}
+    .option{display:flex;align-items:center;gap:12px;padding:10px;border-radius:8px;border:1px solid rgba(0,0,0,0.04);cursor:pointer}
+    .option input{accent-color:var(--accent-dark)}
+    .option.correct{background:rgba(45,159,107,0.08);border-color:rgba(45,159,107,0.2)}
+    .option.wrong{background:rgba(214,69,69,0.06);border-color:rgba(214,69,69,0.12)}
+    .controls{display:flex;gap:8px;align-items:center;justify-content:flex-end;margin-top:14px}
+    button{background:var(--accent);border:none;padding:10px 14px;border-radius:10px;color:#111;font-weight:700;cursor:pointer}
+    button.secondary{background:transparent;border:1px solid rgba(0,0,0,0.06);font-weight:600}
+    .result{margin-top:14px;padding:12px;border-radius:10px;background:linear-gradient(90deg,#fff,#fffef7);border:1px solid rgba(0,0,0,0.03)}
+    .small{font-size:13px;color:var(--muted)}
+    footer{margin-top:18px;text-align:center;color:var(--muted);font-size:13px}
+    @media (max-width:640px){.wrap{padding:12px;margin:18px}} 
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="logo">ZAMA</div>
+      <div>
+        <h1>Zama Creator Program — Quiz</h1>
+        <p class="lead">10 questions • Yellow theme • Test your knowledge of the Zama ecosystem</p>
+      </div>
+    </header>
+
+    <main class="card" id="quizCard">
+      <form id="quizForm">
+
+        <!-- Questions will be injected here -->
+        <div id="questions"></div>
+
+        <div class="controls">
+          <button type="button" id="submitBtn">Submit Answers</button>
+          <button type="button" id="resetBtn" class="secondary">Reset</button>
+        </div>
+
+        <div id="result" class="result" style="display:none"></div>
+      </form>
+    </main>
+
+    <footer>
+      Project: <strong>Zama Creator Program</strong> — Generated quiz
+    </footer>
+  </div>
+
+  <script>
+    const quizData = [
+      {id:1, q: 'What does Zama call its on-chain environment where Apps & infrastructure live?', opts:['Zama Mainnet','Zama Private Network','Zama Public Testnet','Zama Sidechain'], a:2},
+      {id:2, q: 'Which of the following is a “Featured project” in the Zama ecosystem?', opts:['Compound','deBerry\'s','Uniswap','MakerDAO'], a:1},
+      {id:3, q: 'What is “tGBP” in Zama’s ecosystem?', opts:['A governance protocol','A stablecoin pegged to GBP','A privacy layer','A yield farming tool'], a:1},
+      {id:4, q: 'Which project helps with “privacy-preserving portfolio management”?', opts:['Zaïffer','Orion Finance','Coffhee','Conduit'], a:1},
+      {id:5, q: 'Which library is part of Zama’s developer stack as mentioned on the ecosystem page?', opts:['OpenSSL','TensorFlow','Concrete ML','Web3.js'], a:2},
+      {id:6, q: 'Which of these is a role offered under Zama’s “Developer Program”?', opts:['ICO Listing','Training & Premium Support','Mining reward','Hardware grants'], a:1},
+      {id:7, q: 'Which project focuses on encrypted DEX of confidential tokens?', opts:['Conduit','Coffhee','Galactica','Mind Network'], a:1},
+      {id:8, q: 'What is the goal of the “Community / Creator Program”?', opts:['To decide protocol parameters','Rewards & Partnerships and Performance-Based Earnings','To code the entire protocol','To issue new tokens'], a:1},
+      {id:9, q: 'Which partner is working with Zama for standardizing Confidential ERC-20 tokens?', opts:['OpenZeppelin','Polkadot','Chainlink','Solana'], a:0},
+      {id:10, q: 'Which domain does the Zama ecosystem emphasize for enterprise usage?', opts:['Public social media','Consumer mobile apps','Fully Homomorphic Encryption (FHE) for business','NFT marketplaces'], a:2}
+    ];
+
+    const questionsEl = document.getElementById('questions');
+    const resultEl = document.getElementById('result');
+
+    function renderQuestions(){
+      questionsEl.innerHTML = '';
+      quizData.forEach((item, idx) => {
+        const qBox = document.createElement('div');
+        qBox.className = 'question';
+        qBox.innerHTML = `
+          <div class="q-head">
+            <div class="q-num">Q${idx+1}</div>
+            <div class="q-text">${item.q}</div>
+          </div>
+          <div class="options">
+            ${item.opts.map((opt,i)=>`
+              <label class="option" data-q="${item.id}" data-index="${i}">
+                <input type="radio" name="q${item.id}" value="${i}" />
+                <div class="opt-text">${String.fromCharCode(65+i)}. ${opt}</div>
+              </label>
+            `).join('')}
+          </div>
+        `;
+        questionsEl.appendChild(qBox);
+      });
+    }
+
+    function grade(){
+      const form = document.getElementById('quizForm');
+      let score = 0;
+      quizData.forEach(item => {
+        const choice = form[`q${item.id}`];
+        let selected = null;
+        if(choice){
+          if(choice.length === undefined) selected = choice.checked ? Number(choice.value) : null;
+          else{
+            for(const r of choice){ if(r.checked) { selected = Number(r.value); break; } }
+          }
+        }
+        // highlight options
+        const labels = document.querySelectorAll(`label.option[data-q='${item.id}']`);
+        labels.forEach(lbl =>{
+          lbl.classList.remove('correct','wrong');
+          const idx = Number(lbl.getAttribute('data-index'));
+          if(idx === item.a){ lbl.classList.add('correct'); }
+          if(selected !== null && idx === selected && selected !== item.a){ lbl.classList.add('wrong'); }
+        });
+
+        if(selected === item.a) score++;
+      });
+
+      resultEl.style.display = 'block';
+      resultEl.innerHTML = `<strong>Your score: ${score} / ${quizData.length}</strong>
+                             <div class="small">Correct answers are highlighted in green. Wrong selections are marked red. You can reset to try again.</div>`;
+      window.scrollTo({top: resultEl.offsetTop - 20, behavior:'smooth'});
+    }
+
+    document.getElementById('submitBtn').addEventListener('click', grade);
+    document.getElementById('resetBtn').addEventListener('click', ()=>{
+      document.getElementById('quizForm').reset();
+      resultEl.style.display = 'none';
+      document.querySelectorAll('label.option').forEach(lbl=>lbl.classList.remove('correct','wrong'));
+    });
+
+    // Initialize
+    renderQuestions();
+  </script>
+</body>
+</html>
